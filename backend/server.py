@@ -37,6 +37,7 @@ SCENARIOS: Dict[str, Dict[str, Any]] = {
     "normal": {
         "label": "Normal Operation",
         "health_score": 94,
+        "confidence": 96,             # % — modality agreement / signal quality
         "belt_speed": 2.4,            # m/s
         "motor_current": 18.2,        # A
         "motor_rpm": 1460,
@@ -56,6 +57,7 @@ SCENARIOS: Dict[str, Dict[str, Any]] = {
     "loose_joint": {
         "label": "Loose Joint (J2)",
         "health_score": 72,
+        "confidence": 88,
         "belt_speed": 2.4,
         "motor_current": 19.1,
         "motor_rpm": 1455,
@@ -90,6 +92,7 @@ SCENARIOS: Dict[str, Dict[str, Any]] = {
     "damaged_joint": {
         "label": "Damaged Joint (J2 – Critical)",
         "health_score": 34,
+        "confidence": 91,
         "belt_speed": 2.1,
         "motor_current": 22.6,
         "motor_rpm": 1440,
@@ -127,6 +130,7 @@ SCENARIOS: Dict[str, Dict[str, Any]] = {
     "misalignment": {
         "label": "Belt Misalignment",
         "health_score": 61,
+        "confidence": 84,
         "belt_speed": 2.3,
         "motor_current": 20.4,
         "motor_rpm": 1450,
@@ -164,6 +168,7 @@ SCENARIOS: Dict[str, Dict[str, Any]] = {
     "overload": {
         "label": "Motor Overload / Belt Slipping",
         "health_score": 48,
+        "confidence": 87,
         "belt_speed": 1.4,
         "motor_current": 31.8,
         "motor_rpm": 1490,
@@ -226,6 +231,7 @@ def generate_snapshot(scenario_key: str) -> Dict[str, Any]:
     # Live top-line values (small jitter)
     live = {
         "health_score": round(_noise(sc["health_score"], 0.01), 1),
+        "confidence":   round(_noise(sc["confidence"], 0.02), 1),
         "belt_speed":   round(_noise(sc["belt_speed"], 0.02), 3),
         "motor_current": round(_noise(sc["motor_current"], 0.03), 2),
         "motor_rpm":    int(_noise(sc["motor_rpm"], 0.005)),

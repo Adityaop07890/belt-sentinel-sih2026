@@ -18,6 +18,21 @@ export default function ExecutiveBanner({ snapshot, series }) {
       <div className="col-span-12 md:col-span-3 border-r border-[#252729] p-4">
         <HeaderRow left="GLOBAL BELT HEALTH" right="0–100" />
         <HealthGauge value={live.health_score} />
+        <div className="mt-2 flex items-baseline justify-between border-t border-[#252729] pt-2">
+          <span className="text-[10px] font-mono-tel tracking-[0.15em] text-[#757575]">
+            PREDICTION CONFIDENCE
+          </span>
+          <span
+            data-testid="metric-confidence"
+            className={
+              "font-mono-tel text-[16px] font-semibold " +
+              (live.confidence >= 90 ? "text-[#E2E2E2]" :
+               live.confidence >= 75 ? "text-[#FFBF00]" : "text-[#FF3333]")
+            }
+          >
+            {live.confidence.toFixed(0)}<span className="text-[10px] text-[#757575] font-normal">%</span>
+          </span>
+        </div>
         <div className="mt-2 h-10">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trend} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
