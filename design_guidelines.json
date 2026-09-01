@@ -1,0 +1,126 @@
+{
+  "theme": "dark",
+  "typography": {
+    "primary_font": "IBM Plex Sans",
+    "secondary_font": "JetBrains Mono",
+    "headings": {
+      "family": "IBM Plex Sans",
+      "weights": ["400", "500", "600", "700"],
+      "tracking": "tracking-tight"
+    },
+    "telemetry_data": {
+      "family": "JetBrains Mono",
+      "weights": ["400", "700"],
+      "tracking": "tracking-normal",
+      "notes": "Used exclusively for numeric data, sparklines labels, timestamps, and sensor readouts."
+    }
+  },
+  "colors": {
+    "background": {
+      "base": "#121416",
+      "panel": "#1A1C1E",
+      "card": "#252729"
+    },
+    "text": {
+      "primary": "#E2E2E2",
+      "secondary": "#A0A0A0",
+      "muted": "#757575"
+    },
+    "status": {
+      "normal": "#3A3E41",
+      "run_indicator": "#5A6063",
+      "warning": "#FFBF00",
+      "critical": "#FF3333",
+      "info": "#4A90E2"
+    },
+    "borders": {
+      "default": "#3A3E41",
+      "active": "#5A6063"
+    },
+    "notes": "ISA-101 compliant: monochrome grayscale baseline. DO NOT USE vibrant colors for normal states. Reserve amber and red ONLY for alarms and anomalies."
+  },
+  "visual_enhancers": {
+    "textures": [
+      "Subtle grain texture or scanline overlay over the vision panel (ESP32-CAM) to simulate industrial CRT feeds."
+    ],
+    "shadows": [
+      "No large diffuse shadows. Use sharp 1px borders and very subtle drop-shadows (e.g., shadow-[0_4px_12px_rgba(0,0,0,0.5)]) for popovers/modals only."
+    ],
+    "glassmorphism": false,
+    "neumorphism": false,
+    "borders": "Sharp edges or max 2px-4px radius. Industrial, structural, precise."
+  },
+  "grids_and_layouts": {
+    "global_layout": "Bento Grid Protocol - High Density Grid Mode B. Dense, data-heavy, grid-cols-12 system.",
+    "sidebar": "Fixed left sidebar for 'Scenario Selector' and 'System Connectivity'.",
+    "main_content": "Executive Summary Banner at the top. 4 interactive Splice Joint cards in a 2x2 or 1x4 grid. Deep Diagnostic Telemetry below."
+  },
+  "components": {
+    "executive_banner": {
+      "description": "Top marquee/banner. Shows belt speed, motor load, and active critical alerts marquee.",
+      "style": "Dark gray background with red text for active critical alerts, gray text for normal telemetry."
+    },
+    "global_health_score": {
+      "description": "Gauge (0-100) with 30-day trendline. Should look like industrial SCADA.",
+      "style": "Grayscale arc, only colored if in warning/critical state."
+    },
+    "splice_joint_cards": {
+      "description": "4 cards (J1-J4). Contains health %, lifecycle, anomaly detected, and thumbnail.",
+      "style": "Flat, rectangular, 1px border. Changes border to red/amber if anomaly detected."
+    },
+    "telemetry_charts": {
+      "description": "Tabbed time-series charts (Vibration, Thermal, Current, Isolation Forest).",
+      "style": "Shadcn charts/Recharts. Lines must be grayscale. ISO 10816-3 severity bands (green/gray/yellow/red) subtly overlaid behind the line."
+    },
+    "vision_panel": {
+      "description": "ESP32-CAM feed with CNN bounding boxes.",
+      "style": "Image with absolute positioned div for bounding box (red border). CRT scanline effect over the image."
+    },
+    "explainable_ai_cards": {
+      "description": "Expandable cards on alerts. Shows vibration + thermal + vision evidence, plus LLM maintenance recommendations.",
+      "style": "Accordions or expandable cards. Industrial look."
+    }
+  },
+  "motion": {
+    "hover_states": "Slight brightness increase. hover:bg-[#3A3E41]. Text color changes to white.",
+    "entrance_animations": "Staggered fade-in for cards. opacity-0 translate-y-4 to opacity-100 translate-y-0.",
+    "telemetry_animations": "Simulated live data moving from right to left on charts."
+  },
+  "accessibility": {
+    "contrast": "APCA contrast compliant. Light gray text on charcoal background.",
+    "testing": "All interactive elements MUST include a data-testid attribute (e.g., data-testid='scenario-loose-joint')."
+  },
+  "media": {
+    "image_urls": {
+      "clean_splice": {
+        "url": "https://images.unsplash.com/photo-1535923430552-0ce3cd477cc7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHwzfHxpbmR1c3RyaWFsJTIwY29udmV5b3IlMjBiZWx0JTIwbWFjaGluZXJ5fGVufDB8fHx8MTc4ODAyMjAwMnww&ixlib=rb-4.1.0&q=85",
+        "description": "Normal conveyor belt splice thumbnail."
+      },
+      "damaged_splice": {
+        "url": "https://images.unsplash.com/photo-1721413059017-2c4232b10ded?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwxfHxkYW1hZ2VkJTIwcnViYmVyJTIwdGV4dHVyZXxlbnwwfHx8fDE3ODgwMjIwMDZ8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Torn/Damaged conveyor belt splice thumbnail with visible tear."
+      }
+    }
+  },
+  "instructions_to_main_agent": [
+    "Do NOT use Inter, Roboto, or generic sans for text. Use IBM Plex Sans for UI, and JetBrains Mono for telemetry.",
+    "Strict ISA-101 compliance: Use monochrome grayscale for all normal states. Color (Red/Amber) is reserved strictly for anomalies, alarms, and bounding boxes.",
+    "Do not use Shadcn card with large border radius. Override rounded-lg or rounded-xl to rounded-sm or rounded-none.",
+    "Use mock data that simulates real industrial sensors (MPU6050, MLX90614, ACS712).",
+    "Include a sidebar or top selector to switch between scenarios: Normal, Loose Joint, Damaged Joint, Misalignment, Overload.",
+    "In the Vision panel, overlay a red CNN bounding box on the damaged joint image.",
+    "Ensure the dashboard background is a charcoal #1A1C1E, not pitch black.",
+    "Do not use complete transparent backgrounds over content. Keep backgrounds solid.",
+    "All .js components should follow these guidelines. No .tsx files.",
+    "Use react-icons or lucide-react for iconography. DO NOT use generic emojis.",
+    "Make sure the 'Scenario Selector' updates all graphs and system states."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Never apply universal transition like transition: all. Target specific properties.",
+    "Do not center align the app container. No .App { text-align: center; }.",
+    "Use sonner for toasts.",
+    "Provide data-testid attributes on all buttons, selectors, and interactive elements.",
+    "Never use AI assistant Emojis for icons.",
+    "Never use placeholder URLs. Only use provided image_urls."
+  ]
+}
