@@ -19,7 +19,17 @@ export default function Login() {
     setErr("");
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
-    if (error) return setErr(error.message);
+    if (error) {
+      const raw = error.message || "";
+      const lower = raw.toLowerCase();
+      let friendly = raw;
+      if (lower.includes("email not confirmed")) {
+        friendly = "This email hasn't been confirmed yet. Ask your Supabase admin to disable 'Confirm email' or run the confirm-user SQL, then retry.";
+      } else if (lower.includes("invalid login") || lower.includes("invalid credentials")) {
+        friendly = "Invalid email or password. If you just signed up, your account may need to be confirmed in Supabase (Auth → Email → 'Confirm email' OFF, or SQL: update auth.users set email_confirmed_at=now() where email='...'). Otherwise create an account via Request Access.";
+      }
+      return setErr(friendly);
+    }
     navigate(dest, { replace: true });
   }
 

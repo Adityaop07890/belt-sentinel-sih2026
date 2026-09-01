@@ -17,12 +17,21 @@ export default function Signup() {
     setBusy(true); setErr(""); setMsg("");
     const { data, error } = await supabase.auth.signUp({ email, password });
     setBusy(false);
-    if (error) return setErr(error.message);
+    if (error) {
+      const raw = error.message || "";
+      const lower = raw.toLowerCase();
+      let friendly = raw;
+      if (lower.includes("rate limit")) {
+        friendly = "Supabase email rate-limit hit. Ask your admin to disable 'Confirm email' in Supabase (Authentication → Email) or create a user directly via SQL. Then use /login.";
+      } else if (lower.includes("invalid")) {
+        friendly = raw + " — try a real email domain (e.g. gmail.com).";
+      }
+      return setErr(friendly);
+    }
     if (data.session) {
-      // auto-confirm enabled — session available immediately
       navigate("/dashboard", { replace: true });
     } else {
-      setMsg("Account created. Please check your email to confirm before signing in.");
+      setMsg("Account created. Please confirm the email link Supabase sent, or ask admin to disable 'Confirm email' and retry.");
     }
   }
 

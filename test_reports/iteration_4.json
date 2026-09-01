@@ -1,0 +1,42 @@
+{
+  "summary": "Iteration-4 focused retest of (a) the friendly auth-error UX fix on /login and /signup and (b) the new live.confidence field on /api/dashboard/snapshot. Backend: 28/28 pytest tests passed (6 new confidence tests + full iteration-1..3 regression suite). Frontend: Playwright verified login/signup render, friendly error copy, no navigation on failure, no crash on signup rate-limit, and unauthenticated /dashboard -> /login redirect. All 8 requested checks PASSED.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "/login error box",
+        "issues": [
+          "Non-blocking nit: the friendly message leaks admin/DBA internals to end users (literal SQL 'update auth.users set email_confirmed_at=now()' and the Supabase dashboard path). Acceptable for a demo/HMI operator build, but consider shortening the user-facing line and keeping the SQL hint in docs/console."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_confidence.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Login.jsx/Signup.jsx error branching is duplicated string-matching logic; if a third auth surface (password reset) is added, extract a shared mapSupabaseAuthError(error) helper in src/lib/supabase.js to keep messages consistent (DRY).",
+    "Supabase 'Confirm email' is still ON and the built-in email provider is 429 rate-limited, so NO account can be created or signed in from the app. This is an environment/config blocker, not a code bug — the operator must toggle 'Confirm email' OFF or confirm a user via SQL (documented in /app/memory/test_credentials.md). Authenticated dashboard flows remain untestable until then."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_confidence.py"
+  ],
+  "success_rate": {
+    "backend": "100% (28/28)",
+    "frontend": "100% (8/8 requested checks)"
+  },
+  "seed_data_creation": "No new seed data. One throwaway signup attempt (qa.belt1788264120@gmail.com) was rejected by Supabase with HTTP 429, so no user was created.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "/app/memory/test_credentials.md exists but contains NO usable login (by design). Supabase 'Confirm email' ON + email provider rate-limited (HTTP 429 on signup, HTTP 400 'Invalid login credentials' on signin). Authenticated flows cannot be tested until an admin disables confirm-email or confirms a user via SQL.",
+  "context_for_next_testing_agent": "Verified evidence: (1) /login invalid creds -> data-testid='login-error' shows 'Invalid email or password. If you just signed up... 'Confirm email' OFF, or SQL: update auth.users set email_confirmed_at=now()... Otherwise create an account via Request Access.' and the URL stays on /login. (2) /signup -> data-testid='signup-error' shows 'Supabase email rate-limit hit...' (network 429) and the page does not crash. (3) /dashboard while unauthenticated redirects to /login. (4) Backend live.confidence: normal 96, loose_joint 88, damaged_joint 91 (observed in 88-94 band), misalignment 84 (<90), overload 87, with +/-2% jitter; unknown scenario returns 400; no _id leakage. New tests live in /app/backend/tests/test_confidence.py — run `cd /app/backend && python -m pytest tests/ -v`. Next agent: once a confirmed Supabase user exists, run the full authenticated dashboard suite (scenario switching, AI recommendation SSE, joint passport, 30/60/90-day trend chart) which has never been exercised end-to-end behind auth.",
+  "rca_of_the_issue": "Original 'invalid login credentials' bug root cause confirmed unchanged at the platform level: Supabase Auth has 'Confirm email' ENABLED and its built-in SMTP is rate-limited (signup returns HTTP 429), so no user reaches email_confirmed_at; Supabase intentionally returns the generic 400 'Invalid login credentials' for unconfirmed accounts. The iteration-4 code change is UX-only and works as designed: both error paths now render actionable guidance instead of the bare Supabase string. Permanent mitigation requires a Supabase dashboard/SQL action (disable Confirm email, or set email_confirmed_at=now()), which is outside the app's code."
+}
