@@ -8,14 +8,25 @@ import os
 import httpx
 from typing import Any, Dict, List, Optional
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
-SUPABASE_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
+
+def _url() -> str:
+    return os.environ.get("SUPABASE_URL", "").rstrip("/")
+
+
+def _key() -> str:
+    return os.environ.get("SUPABASE_ANON_KEY", "")
+
+
+# Backwards-compat module attributes (used by seed script)
+SUPABASE_URL = _url()
+SUPABASE_KEY = _key()
 
 
 def _headers(prefer: Optional[str] = None) -> Dict[str, str]:
+    key = _key()
     h = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
@@ -32,7 +43,7 @@ class SupabaseError(RuntimeError):
 
 
 def is_configured() -> bool:
-    return bool(SUPABASE_URL and SUPABASE_KEY)
+    return bool(_url() and _key())
 
 
 async def select(
@@ -44,8 +55,51 @@ async def select(
     offset: Optional[int] = None,
     select_cols: str = "*",
     count: Optional[str] = None,      # "exact" | "planned" | "estimated"
+    paginate: bool = False,           # fetch all rows in 1000-row pages
 ) -> Dict[str, Any]:
-    """Return {"rows": [...], "count": int|None}."""
+    """Return {"rows": [...], "count": int|None}.
+
+    Note: Supabase PostgREST enforces a hard `db-max-rows=1000` cap on every
+    response. Pass `paginate=True` to transparently walk the result set with the
+    HTTP Range header until all rows are fetched. When `paginate=True`, `limit`
+    is treated as an upper bound; pagination stops once that many rows have been
+    collected or the source is exhausted.
+    """
+    if paginate:
+        collected: List[Dict[str, Any]] = []
+        page = 1000
+        page_offset = 0
+        while True:
+            take = page if limit is None else min(page, limit - len(collected))
+            if take <= 0:
+                break
+            r = await _select_page(
+                table, filters=filters, order=order,
+                limit=take, offset=page_offset,
+                select_cols=select_cols, count=count,
+            )
+            collected.extend(r["rows"])
+            got = len(r["rows"])
+            if got < take or (limit is not None and len(collected) >= limit):
+                return {"rows": collected, "count": r["count"]}
+            page_offset += got
+    return await _select_page(
+        table, filters=filters, order=order,
+        limit=limit, offset=offset,
+        select_cols=select_cols, count=count,
+    )
+
+
+async def _select_page(
+    table: str,
+    *,
+    filters: Optional[Dict[str, str]] = None,
+    order: Optional[str] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+    select_cols: str = "*",
+    count: Optional[str] = None,
+) -> Dict[str, Any]:
     params: Dict[str, str] = {"select": select_cols}
     if filters:
         params.update(filters)
@@ -60,7 +114,7 @@ async def select(
     if count:
         headers["Prefer"] = f"count={count}"
 
-    url = f"{SUPABASE_URL}/rest/v1/{table}"
+    url = f"{_url()}/rest/v1/{table}"
     async with httpx.AsyncClient(timeout=30) as client:
         r = await client.get(url, params=params, headers=headers)
     if r.status_code >= 400:
@@ -80,7 +134,7 @@ async def insert(table: str, rows: List[Dict[str, Any]]) -> int:
     """Bulk-insert rows in a single request. Returns number of rows inserted."""
     if not rows:
         return 0
-    url = f"{SUPABASE_URL}/rest/v1/{table}"
+    url = f"{_url()}/rest/v1/{table}"
     async with httpx.AsyncClient(timeout=60) as client:
         r = await client.post(url, headers=_headers("return=minimal"), json=rows)
     if r.status_code >= 400:
@@ -95,7 +149,7 @@ async def count(table: str, filters: Optional[Dict[str, str]] = None) -> int:
         params.update(filters)
     params["limit"] = "1"
     headers = _headers("count=exact")
-    url = f"{SUPABASE_URL}/rest/v1/{table}"
+    url = f"{_url()}/rest/v1/{table}"
     async with httpx.AsyncClient(timeout=30) as client:
         r = await client.get(url, params=params, headers=headers)
     if r.status_code >= 400:

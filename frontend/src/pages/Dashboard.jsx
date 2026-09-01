@@ -7,7 +7,10 @@ import JointMatrix from "@/components/dashboard/JointMatrix";
 import VisionPanel from "@/components/dashboard/VisionPanel";
 import TelemetryCharts from "@/components/dashboard/TelemetryCharts";
 import AlertPanel from "@/components/dashboard/AlertPanel";
-import { HardHat } from "lucide-react";
+import HistoricalTrend from "@/components/dashboard/HistoricalTrend";
+import { HardHat, LogOut, User } from "lucide-react";
+import { useAuth } from "@/auth/AuthProvider";
+import { useNavigate } from "react-router-dom";
 
 const POLL_MS = 1500;
 
@@ -79,6 +82,8 @@ export default function Dashboard() {
                   <AlertPanel snapshot={snapshot} />
                 </div>
               </div>
+
+              <HistoricalTrend />
             </>
           )}
         </div>
@@ -93,6 +98,14 @@ export default function Dashboard() {
 }
 
 function TopBar({ snapshot }) {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const email = user?.email || "operator";
+  const initial = (email[0] || "?").toUpperCase();
+  const onLogout = async () => {
+    await signOut();
+    navigate("/login", { replace: true });
+  };
   return (
     <div className="h-14 flex items-center justify-between px-6 border-b border-[#252729] bg-[#1A1C1E]">
       <div className="flex items-center gap-3">
@@ -113,6 +126,25 @@ function TopBar({ snapshot }) {
           MODE: <span className="text-[#E2E2E2]">{snapshot?.scenario_label ?? "—"}</span>
         </span>
         <span>UTC {new Date().toISOString().slice(11, 19)}</span>
+        <div className="flex items-center gap-2 border-l border-[#252729] pl-4">
+          <div
+            className="h-6 w-6 grid place-items-center bg-[#252729] border border-[#3A3E41] text-[10px] font-mono-tel text-[#E2E2E2]"
+            title={email}
+            data-testid="topbar-user-initial"
+          >
+            {initial}
+          </div>
+          <span className="text-[10.5px] text-[#E2E2E2] truncate max-w-[180px]" data-testid="topbar-user-email">
+            {email}
+          </span>
+          <button
+            onClick={onLogout}
+            data-testid="topbar-logout"
+            className="inline-flex items-center gap-1 border border-[#3A3E41] hover:border-[#FF3333] hover:text-[#FF3333] px-2 py-1 text-[10px] font-mono-tel"
+          >
+            <LogOut size={11} /> LOGOUT
+          </button>
+        </div>
       </div>
     </div>
   );

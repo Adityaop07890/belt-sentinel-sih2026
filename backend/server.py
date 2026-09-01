@@ -15,7 +15,8 @@ import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+import supabase_client as sb
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -407,6 +408,170 @@ async def ai_recommendation(req: RecommendationRequest):
 
     return StreamingResponse(event_generator(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# ---------------------------------------------------------------------------
+# Supabase-backed endpoints (historical + sensor + passport)
+# ---------------------------------------------------------------------------
+
+@api_router.get("/history/joint")
+async def joint_history(joint_id: str = "J2", days: int = 30, conveyor_id: str = "conv-01"):
+    """Return joint_history rows for the given joint over the last `days`.
+
+    Paginates past the PostgREST 1000-row cap; queried desc for latency and
+    returned ascending for chart use.
+    """
+    if joint_id not in ("J1", "J2", "J3", "J4"):
+        raise HTTPException(400, "joint_id must be J1|J2|J3|J4")
+    days = max(1, min(365, days))
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    try:
+        res = await sb.select(
+            "joint_history",
+            filters={
+                "joint_id":    f"eq.{joint_id}",
+                "conveyor_id": f"eq.{conveyor_id}",
+                "timestamp":   f"gte.{since}",
+            },
+            order="timestamp.desc",
+            limit=4000,
+            paginate=True,
+        )
+    except sb.SupabaseError as e:
+        raise HTTPException(502, f"Supabase upstream error: {e.status}")
+    rows = list(reversed(res["rows"]))
+    return {"joint_id": joint_id, "days": days, "rows": rows}
+
+
+def _downsample(rows: List[Dict[str, Any]], target: int) -> List[Dict[str, Any]]:
+    if len(rows) <= target:
+        return rows
+    stride = math.ceil(len(rows) / target)
+    picked = rows[::stride]
+    # Always include the final row so charts terminate at the true latest timestamp.
+    if picked and picked[-1] is not rows[-1]:
+        picked.append(rows[-1])
+    return picked
+
+
+@api_router.get("/history/all-joints")
+async def history_all(days: int = 30, conveyor_id: str = "conv-01"):
+    """Return the health trend for J1-J4 over `days` with server-side downsampling."""
+    days = max(1, min(365, days))
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    target_points = 300 if days >= 60 else 200
+
+    async def _one(joint: str):
+        try:
+            r = await sb.select(
+                "joint_history",
+                filters={
+                    "joint_id":    f"eq.{joint}",
+                    "conveyor_id": f"eq.{conveyor_id}",
+                    "timestamp":   f"gte.{since}",
+                },
+                order="timestamp.desc",
+                select_cols="timestamp,health_score,confidence,risk_state,event_type",
+                limit=4000,
+                paginate=True,
+            )
+            rows_asc = list(reversed(r["rows"]))
+            return joint, _downsample(rows_asc, target_points)
+        except sb.SupabaseError:
+            return joint, []
+
+    import asyncio
+    results = await asyncio.gather(*[_one(j) for j in ["J1", "J2", "J3", "J4"]])
+    return {"days": days, "joints": {j: rows for j, rows in results}}
+
+
+@api_router.get("/joint/passport")
+async def joint_passport(joint_id: str = "J2", conveyor_id: str = "conv-01"):
+    """Health Passport: latest state + downsampled 90-day history + last anomalies."""
+    if joint_id not in ("J1", "J2", "J3", "J4"):
+        raise HTTPException(400, "joint_id must be J1|J2|J3|J4")
+    since = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
+    try:
+        latest = await sb.select(
+            "joint_history",
+            filters={"joint_id": f"eq.{joint_id}", "conveyor_id": f"eq.{conveyor_id}"},
+            order="timestamp.desc",
+            limit=1,
+        )
+        trend = await sb.select(
+            "joint_history",
+            filters={
+                "joint_id":    f"eq.{joint_id}",
+                "conveyor_id": f"eq.{conveyor_id}",
+                "timestamp":   f"gte.{since}",
+            },
+            order="timestamp.desc",
+            select_cols="timestamp,health_score,confidence,risk_state,event_type",
+            limit=4000,
+            paginate=True,
+        )
+        anomalies = await sb.select(
+            "joint_history",
+            filters={
+                "joint_id":    f"eq.{joint_id}",
+                "conveyor_id": f"eq.{conveyor_id}",
+                "event_type":  "neq.NORMAL",
+            },
+            order="timestamp.desc",
+            limit=10,
+        )
+    except sb.SupabaseError as e:
+        raise HTTPException(502, f"Supabase upstream error: {e.status}")
+    trend_asc = list(reversed(trend["rows"]))
+    return {
+        "joint_id": joint_id,
+        "latest":    latest["rows"][0] if latest["rows"] else None,
+        "trend_90d": _downsample(trend_asc, 400),
+        "trend_full_count": len(trend_asc),
+        "recent_anomalies": anomalies["rows"],
+    }
+
+
+@api_router.get("/sensors")
+async def sensor_status(conveyor_id: str = "conv-01"):
+    try:
+        res = await sb.select(
+            "sensor_status",
+            filters={"conveyor_id": f"eq.{conveyor_id}"},
+            order="sensor_name.asc",
+        )
+    except sb.SupabaseError as e:
+        raise HTTPException(502, f"Supabase upstream error: {e.status}")
+    return {"sensors": res["rows"]}
+
+
+class SeedRequest(BaseModel):
+    force: bool = False
+    token: Optional[str] = None
+
+
+@api_router.post("/admin/seed")
+async def seed_endpoint(req: SeedRequest):
+    """Idempotent seed: skips if data already exists (unless force=True).
+
+    Gated behind SEED_ADMIN_TOKEN in .env when set (recommended for anything past demo).
+    """
+    admin = os.environ.get("SEED_ADMIN_TOKEN")
+    if admin and req.token != admin:
+        raise HTTPException(401, "invalid admin token")
+    from synthetic_seed import build_dataset
+    ds = build_dataset()
+    result: Dict[str, Any] = {}
+    for tbl in ["sensor_status", "joint_history", "conveyor_telemetry"]:
+        existing = await sb.count(tbl)
+        if existing > 0 and not req.force:
+            result[tbl] = {"status": "skipped", "existing": existing}
+            continue
+        total = 0
+        for i in range(0, len(ds[tbl]), 1000):
+            total += await sb.insert(tbl, ds[tbl][i:i+1000])
+        result[tbl] = {"status": "seeded", "inserted": total}
+    return result
 
 
 # ---------------------------------------------------------------------------

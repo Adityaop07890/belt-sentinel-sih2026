@@ -1,9 +1,27 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { SCENARIOS } from "@/lib/scenarios";
-import { Radio, HardDrive, Cpu, ServerCog } from "lucide-react";
+import { API } from "@/lib/api";
+import { Radio, HardDrive, Cpu, ServerCog, Video, Thermometer } from "lucide-react";
+
+const SENSOR_ICON = {
+  "MPU6050":   Cpu,
+  "MLX90614":  Thermometer,
+  "ACS712":    ServerCog,
+  "IR Encoder": Radio,
+  "ESP32-CAM": Video,
+};
 
 export default function Sidebar({ scenario, onScenarioChange, snapshot }) {
   const sys = snapshot?.system;
+  const [sensors, setSensors] = useState([]);
+
+  useEffect(() => {
+    let m = true;
+    axios.get(`${API}/sensors`).then((r) => { if (m) setSensors(r.data.sensors || []); }).catch(() => {});
+    return () => { m = false; };
+  }, []);
+
   return (
     <aside
       data-testid="sidebar"
@@ -54,10 +72,24 @@ export default function Sidebar({ scenario, onScenarioChange, snapshot }) {
         </ul>
       </div>
 
+      {/* Sensor diagnostics (live from Supabase sensor_status table) */}
+      <div className="px-5 pt-6">
+        <div className="text-[10px] tracking-[0.18em] font-mono-tel text-[#757575] mb-2">
+          SENSOR DIAGNOSTICS
+        </div>
+        {sensors.length === 0 ? (
+          <div className="text-[11px] font-mono-tel text-[#5A6063]">Loading…</div>
+        ) : (
+          sensors.map((s) => (
+            <SensorRow key={s.sensor_name} data={s} />
+          ))
+        )}
+      </div>
+
       {/* System status */}
       <div className="px-5 pt-6">
         <div className="text-[10px] tracking-[0.18em] font-mono-tel text-[#757575] mb-2">
-          SYSTEM CONNECTIVITY
+          EDGE CONNECTIVITY
         </div>
         <StatusRow icon={Cpu} label="Edge node (ESP32)" value={sys?.edge_node ?? "—"} online />
         <StatusRow icon={Radio} label="MQTT broker" value={sys?.mqtt_broker ?? "—"} online />
@@ -67,7 +99,7 @@ export default function Sidebar({ scenario, onScenarioChange, snapshot }) {
 
       <div className="mt-auto px-5 pb-5 pt-6 border-t border-[#252729]">
         <div className="text-[10px] font-mono-tel text-[#757575] leading-relaxed">
-          ISA-101 HMI · ISO 10816-3 severity bands · Multimodal fusion: MPU6050 · MLX90614 · ACS712 · ESP32-CAM
+          Data source: <span className="text-[#A0A0A0]">SYNTHETIC / DEMO</span> · Supabase · ISA-101 HMI · ISO 10816-3
         </div>
       </div>
     </aside>
@@ -84,6 +116,33 @@ function StatusRow({ icon: Icon, label, value, online }) {
       <div className="flex items-center gap-1.5 text-[11px] font-mono-tel text-[#E2E2E2]">
         {online && <span className="h-1.5 w-1.5 bg-[#5A6063] rounded-full dot-pulse" />}
         <span>{value}</span>
+      </div>
+    </div>
+  );
+}
+
+function SensorRow({ data }) {
+  const Icon = SENSOR_ICON[data.sensor_name] || Cpu;
+  const status = (data.status || "OFFLINE").toUpperCase();
+  const color =
+    status === "ONLINE"   ? "text-[#5A6063]" :
+    status === "DEGRADED" ? "text-[#FFBF00]" : "text-[#FF3333]";
+  const dot =
+    status === "ONLINE"   ? "bg-[#5A6063] dot-pulse" :
+    status === "DEGRADED" ? "bg-[#FFBF00]" : "bg-[#FF3333] hmi-blink";
+  return (
+    <div
+      data-testid={`sensor-row-${data.sensor_name.toLowerCase().replace(/ /g, "-")}`}
+      className="flex items-center justify-between py-1.5 border-b border-[#252729]/70 last:border-b-0"
+    >
+      <div className="flex items-center gap-2 text-[11px] text-[#A0A0A0]">
+        <Icon size={13} className="text-[#5A6063]" />
+        {data.sensor_name}
+      </div>
+      <div className="flex items-center gap-1.5 text-[10px] font-mono-tel">
+        <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+        <span className={color}>{status}</span>
+        <span className="text-[#757575]">· {Math.round((data.quality || 0) * 100)}%</span>
       </div>
     </div>
   );

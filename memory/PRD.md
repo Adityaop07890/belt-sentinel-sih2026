@@ -33,6 +33,27 @@ status (J1-J4) with explainable diagnostics.
 - Live polling every 1.5s, keyboard hotkeys 1-5 to switch scenarios.
 - Fonts: IBM Plex Sans + JetBrains Mono. CRT scanlines + grain overlay for authentic HMI feel.
 
+## Iteration 2 — Supabase Data Layer + Auth (Feb 2026)
+- Supabase PostgREST integration (`backend/supabase_client.py`) — anon-key REST only, no service_role exposed. Added pagination that walks past PostgREST's 1000-row cap via HTTP offset paging.
+- Idempotent synthetic seed (`backend/synthetic_seed.py`) — 15,000 conveyor_telemetry rows + 7,500 joint_history rows + 5 sensor_status rows over 75 days across J1-J4 and all 5 scenarios. Correlated multimodal signals, sensor-degradation events, modality-disagreement events, realistic episode timeline.
+- New endpoints: `/api/history/joint`, `/api/history/all-joints`, `/api/joint/passport`, `/api/sensors`, `/api/admin/seed` (gated by SEED_ADMIN_TOKEN when set).
+- Server-side ceil-stride downsampling ensures 30D≤200, 60D/90D≤300, passport≤400 chart points, all terminating at the true latest timestamp.
+- Sidebar sensor-diagnostics widget now reads live from `sensor_status`.
+- New HistoricalTrend component below the dashboard grid — 30/60/90 day toggle, 4-joint health lines, drawn from `joint_history`.
+- Supabase Auth (email/password) via `@supabase/supabase-js`; `AuthProvider`, `Login`, `Signup`, `ProtectedRoute`.
+- `/dashboard` is now the protected primary route; unauthenticated visits redirect to `/login`.
+- User badge + LOGOUT button in TopBar; session persists across refreshes.
+
+## Backlog / Next
+- P0: Complete auth login test — user must turn OFF "Confirm email" in Supabase (or manually confirm one user via SQL). See `memory/test_credentials.md`.
+- P1: Joint Passport modal on joint-card click (drill-down 90-day chart + recent anomaly list, already available via `/api/joint/passport`)
+- P1: Prediction Confidence % readout separate from Health Score in ExecutiveBanner
+- P1: Conveyor visual map (schematic showing J1-J4 positions with live health)
+- P2: FFT frequency-spectrum tab for vibration
+- P2: Twilio SMS on critical alerts (waiting on user credentials)
+- P2: PLC/SCADA/MQTT live-broker mode
+- P2: Real backend JWT verification on `/api/*` endpoints (currently public, dashboard is protected on frontend only)
+
 ## Backlog / Next
 - P1: FFT frequency-spectrum tab for vibration
 - P1: Joint drill-down modal with 30-90 day lifecycle history
