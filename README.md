@@ -1,307 +1,287 @@
-# Belt-Sentinel 🚨
+# 🚨 Belt-Sentinel
 
-### AIoT Conveyor Belt Health Monitoring & Predictive Maintenance Platform
+### AIoT Conveyor Belt Health Monitoring & Predictive Maintenance
 
-**SIH 2026 · Problem Statement 26008**
+<p align="center">
+  <strong>Detect early · Localize the problem · Act before failure</strong>
+</p>
 
-Belt-Sentinel is an AIoT-based predictive-maintenance platform designed to monitor industrial conveyor belts, detect early-stage failures, identify affected joints, estimate equipment health, and provide actionable maintenance recommendations.
+<p align="center">
+  <img src="https://img.shields.io/badge/SIH%202026-PS%2026008-ff6b35?style=for-the-badge" alt="SIH 2026">
+  <img src="https://img.shields.io/badge/React-19-61dafb?style=for-the-badge&logo=react&logoColor=white" alt="React 19">
+  <img src="https://img.shields.io/badge/FastAPI-Python-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Supabase-Postgres-3ecf8e?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
+</p>
 
-The platform combines **vibration, temperature, motor-current and computer-vision signals** into a unified monitoring dashboard for industrial operators and maintenance teams.
-
-> **Detect early. Localize accurately. Act before failure.**
-
----
-
-## 🎯 Problem
-
-Industrial conveyor belts are critical to mining and material-handling operations. Failures such as:
-
-* Belt-joint degradation
-* Splice damage
-* Belt misalignment
-* Motor overload
-* Belt slipping
-* Thermal abnormalities
-
-can result in production downtime, equipment damage, safety risks and expensive emergency maintenance.
-
-Traditional maintenance approaches often depend on periodic inspection or single-sensor thresholds, which can miss developing faults.
+> **Belt-Sentinel is a prototype monitoring system for industrial conveyor belts.** It combines simulated vibration, temperature, motor-current and vision signals to show how a maintenance team could move from periodic inspection toward condition-based maintenance.
 
 ---
 
-## 💡 Solution
+## 👀 What does it actually do?
 
-Belt-Sentinel provides a centralized monitoring and predictive-maintenance workflow:
+A conveyor problem rarely announces itself as one perfect sensor reading. Belt-Sentinel treats the problem as a combination of signals and turns them into something an operator can act on.
+
+The dashboard can show:
+
+- overall belt health
+- joint-level condition for J1–J4
+- vibration, temperature, current and speed trends
+- anomaly and confidence scores
+- vision-based damage evidence in the prototype
+- alerts with maintenance actions
+- historical joint behaviour
+- scenario-based fault reproduction for demonstrations
+
+The important part is the workflow:
 
 ```text
-Sensors
+Signals
    ↓
-Edge / AIoT Gateway
+Condition analysis
    ↓
-Multimodal Condition Analysis
+Anomaly / health assessment
    ↓
-Anomaly Detection
+Affected joint or system state
    ↓
-Health + Confidence + Risk
+Alert + evidence
    ↓
-Joint-Level Diagnosis
-   ↓
-Alert & Maintenance Recommendation
-   ↓
-Operator Dashboard
+Maintenance action
 ```
 
-The system is designed to move maintenance from **reactive repair** toward **condition-based and predictive maintenance**.
+---
+
+## 🎯 Why this project?
+
+Conveyor downtime can come from joint degradation, misalignment, slipping, overload or thermal problems. A threshold-only system can make it difficult to understand **where the issue is, how serious it is, and what evidence supports the alert**.
+
+Belt-Sentinel is built around those questions:
+
+| Operator question | Dashboard answer |
+|---|---|
+| **What is wrong?** | Health, anomaly and alert state |
+| **Where is it?** | Joint-level condition |
+| **How bad is it?** | Risk + severity indicators |
+| **How sure are we?** | Confidence score + multimodal evidence |
+| **What should we do?** | Maintenance recommendation |
 
 ---
 
-## 🔧 Sensor Architecture
-
-The target hardware architecture uses multiple complementary sensing modalities:
-
-| Sensor        | Purpose                                   |
-| ------------- | ----------------------------------------- |
-| **MPU6050**   | Vibration / motion monitoring             |
-| **MLX90614**  | Non-contact temperature measurement       |
-| **ACS712**    | Motor current monitoring                  |
-| **ESP32-CAM** | Visual inspection of belt/joint condition |
-| **ESP32**     | Edge sensing and gateway layer            |
-| **MQTT**      | Telemetry communication                   |
-
-Using multiple modalities reduces dependence on a single sensor and enables cross-validation of abnormal conditions.
-
----
-
-## 🧠 Multimodal Monitoring
-
-Belt-Sentinel evaluates multiple signals together:
+## 🧩 Prototype architecture
 
 ```text
-Vibration
-   +
-Temperature
-   +
-Motor Current
-   +
-Belt Speed
-   +
-Computer Vision
+┌───────────────────────────────┐
+│ Industrial Conveyor / Target  │
+└───────────────┬───────────────┘
+                │
+     ┌──────────┼──────────┐
+     │          │          │
+     ▼          ▼          ▼
+  Vibration  Thermal    Current      Vision
+  MPU6050    MLX90614   ACS712      ESP32-CAM
+     │          │          │            │
+     └──────────┴──────────┴────────────┘
+                     │
+                     ▼
+              Edge / Telemetry Layer
+                     │
+                     ▼
+               FastAPI Backend
+                     │
+          ┌──────────┼──────────┐
+          ▼          ▼          ▼
+      Supabase   Scenario      AI
+      History    Engine    Recommendation
+          │          │          │
+          └──────────┼──────────┘
+                     ▼
+              React Monitoring UI
+                     │
+                     ▼
+                  Operator
+```
+
+### Hardware target
+
+The intended edge setup uses ESP32 with MPU6050, MLX90614, ACS712 and ESP32-CAM. The current demo can run without physical hardware by switching between controlled fault scenarios.
+
+---
+
+## 🧪 Demo scenarios
+
+The backend contains five repeatable operating modes, which makes the prototype easy to demonstrate during a hackathon without creating a real equipment fault:
+
+| Scenario | Example signal pattern | Prototype outcome |
+|---|---|---|
+| 🟢 Normal | stable signals | healthy state |
+| 🟡 Loose Joint | vibration + thermal rise | J2 warning |
+| 🔴 Damaged Joint | high vibration + thermal rise + vision evidence | J2 critical alert |
+| 🟠 Misalignment | distributed lateral vibration | system warning |
+| 🔴 Motor Overload / Slipping | current rises while belt speed falls | critical overload alert |
+
+The scenario engine is implemented directly in `backend/server.py`, including health, confidence, anomaly, joint state and alert values.
+
+---
+
+## 📈 Synthetic dataset
+
+The prototype uses generated historical telemetry so the dashboard can demonstrate long-term trends before live industrial hardware is connected.
+
+The dataset generator is deterministic and models:
+
+- **15,000 rows**
+- **75 days** of history
+- **4 joints** (`J1`–`J4`)
+- normal operation plus fault episodes
+- correlated health, vibration, temperature, current, anomaly and confidence signals
+- sensor degradation and modality-disagreement cases
+
+The timeline intentionally includes a progression such as:
+
+```text
+Stable
+  ↓
+Early warning
+  ↓
+Degradation
+  ↓
+Critical event
+  ↓
+Inspection / recovery
+```
+
+The seed script documents the 15,000-row / 75-day design and generates the episodes across the four joints.
+
+### Important note
+
+This dataset is **synthetic prototype data**. It is useful for testing the application, visualising trends and demonstrating the detection workflow; it should not be presented as field-collected sensor data.
+
+---
+
+## 🧠 Health, anomaly and confidence
+
+The dashboard exposes several signals instead of hiding everything behind one number.
+
+**Health score** — a compact view of the estimated condition.
+
+**Anomaly score** — how far the observed behaviour is from the expected operating pattern.
+
+**Confidence score** — how strongly the available modalities support the displayed condition.
+
+**Risk state** — the operational urgency attached to the current condition.
+
+For vibration, the prototype also displays ISO-style severity zones using the thresholds implemented by the project.
+
+---
+
+## 🤖 AI-assisted maintenance recommendation
+
+When the system identifies a significant condition, the backend can pass the detected state and supporting evidence into the recommendation layer. The goal is not to replace a maintenance engineer; it is to turn telemetry into a readable next step.
+
+Typical output is structured around:
+
+```text
+Root-cause hypothesis
         ↓
-Multimodal Condition Assessment
-```
-
-For example:
-
-### Loose Joint
-
-```text
-Periodic vibration spikes
-        +
-Thermal increase
-        +
-Elevated anomaly score
+Immediate action
         ↓
-J2 Early Degradation
-```
-
-### Damaged Joint
-
-```text
-High vibration
-        +
-Large thermal rise
-        +
-Visual tear detection
+Follow-up maintenance
         ↓
-High-confidence critical condition
+Risk of ignoring the issue
 ```
 
-### Motor Overload / Belt Slipping
-
-```text
-Motor current ↑
-Belt speed ↓
-Vibration ↑
-Temperature ↑
-        ↓
-Overload / slipping condition
-```
-
----
-
-## 📊 Health & Risk Model
-
-The dashboard represents the equipment state using:
-
-* **Health Score** — estimated condition of the belt/joint
-* **Anomaly Score** — degree of abnormal behavior
-* **Confidence Score** — agreement/quality across sensing modalities
-* **Risk State** — operational severity
-* **ISO vibration zone** — vibration severity classification
-
-Current vibration classification in the prototype:
-
-```text
-< 1.8 mm/s       → Zone A
-1.8–<2.8 mm/s    → Zone B
-2.8–<4.5 mm/s    → Zone C
-≥ 4.5 mm/s       → Zone D
-```
-
----
-
-## 🚨 Alert Workflow
-
-When abnormal behavior is detected:
-
-```text
-Sensor Anomaly
-      ↓
-Severity Assessment
-      ↓
-Affected Component / Joint
-      ↓
-Alert Generation
-      ↓
-Evidence Display
-      ↓
-Maintenance Recommendation
-```
-
-A critical condition can provide:
-
-```text
-CRITICAL ALERT
-Affected Joint: J2
-
-Evidence:
-• High vibration
-• Thermal rise
-• Visual damage
-• High anomaly score
-
-Recommended Action:
-Halt / decelerate the belt
-and inspect or replace the affected joint.
-```
-
----
-
-## 🤖 AI Maintenance Recommendations
-
-Belt-Sentinel includes an LLM-powered maintenance recommendation layer.
-
-The system sends the detected condition and supporting evidence to the AI model and generates structured guidance:
-
-```text
-1. Root Cause Hypothesis
-2. Immediate Action
-3. Follow-up Maintenance
-4. Risk if Ignored
-```
-
-The recommendation is streamed to the dashboard so the operator can receive guidance without manually interpreting raw sensor values.
-
----
-
-## 🪪 Joint Health Passport
-
-Each conveyor joint can maintain a historical health record.
-
-The Health Passport provides:
-
-* Latest joint condition
-* 90-day health trend
-* Confidence history
-* Risk state
-* Recent anomalies
-* Event history
-
-This allows maintenance teams to answer:
-
-> **"How has this joint been behaving over time?"**
-
-instead of looking only at the current sensor reading.
+The backend describes this as an LLM-generated maintenance recommendation layer and exposes a streaming recommendation path.
 
 ---
 
 ## 🖥️ Dashboard
 
-The React dashboard provides:
+The frontend is a React application with a monitoring-console layout. The main dashboard includes the executive health banner, joint matrix, vision panel, telemetry charts, alert panel and historical trend view.
 
-* Executive health overview
-* Joint health matrix
-* Computer-vision inspection panel
-* Live telemetry charts
-* Alert panel
-* Historical trends
-* Scenario controls
-* User authentication
-* Maintenance recommendations
+The dashboard polls the backend every **1.5 seconds** for a live-demo experience.
 
-The dashboard currently refreshes monitoring data every **1.5 seconds** to provide a live-monitoring experience.
+### Main views
+
+**Joint Matrix**  
+See the condition of each belt joint at a glance.
+
+**Vision Panel**  
+Show prototype vision evidence when a damaged-joint scenario is selected.
+
+**Telemetry Charts**  
+Follow vibration, temperature, current and other operating signals over time.
+
+**Alert Panel**  
+Connect an abnormal state to evidence and a recommended action.
+
+**Historical Trend**  
+Use stored history to understand how a joint has changed rather than looking only at the latest sample.
 
 ---
 
-## 🏗️ System Architecture
+## 🗄️ Supabase data layer
+
+The project uses Supabase through its PostgREST interface rather than relying on the Supabase Python SDK. The custom async client supports table reads, inserts, counts, filtering, ordering and pagination.
+
+That gives the prototype a clean separation:
 
 ```text
-                    ┌─────────────────────┐
-                    │    Conveyor Belt    │
-                    └──────────┬──────────┘
-                               │
-          ┌────────────────────┼────────────────────┐
-          │                    │                    │
-          ▼                    ▼                    ▼
-      MPU6050               MLX90614             ACS712
-     Vibration             Temperature          Motor Current
-          │                    │                    │
-          └────────────────────┼────────────────────┘
-                               │
-                               ▼
-                         ESP32 / Edge
-                               │
-                         ESP32-CAM
-                               │
-                               ▼
-                    Multimodal Analysis
-                               │
-                ┌──────────────┼──────────────┐
-                ▼              ▼              ▼
-             Health         Anomaly        Confidence
-                │              │              │
-                └──────────────┼──────────────┘
-                               ▼
-                          Risk Engine
-                               │
-                               ▼
-                       FastAPI Backend
-                         /          \
-                        /            \
-                       ▼              ▼
-                  Supabase           LLM
-                 Historical       Maintenance
-                    Data         Recommendation
-                       \              /
-                        \            /
-                         ▼          ▼
-                         React Dashboard
-                               │
-                               ▼
-                            Operator
+Frontend
+   ↓
+FastAPI API
+   ↓
+Supabase / PostgREST
+   ↓
+Historical telemetry
 ```
+
+The backend also contains optional MongoDB persistence for scenario runs, so MongoDB and Supabase have different roles rather than being presented as the same data layer.
 
 ---
 
-## 📁 Repository Structure
+## 🛠️ Tech stack
+
+### Frontend
+
+- React 19
+- React Router
+- Tailwind CSS
+- Recharts
+- Axios
+- Supabase Auth
+- Radix UI
+- Framer Motion
+- Lucide React
+
+### Backend
+
+- Python
+- FastAPI
+- Uvicorn
+- Pydantic
+- httpx
+- MongoDB client
+- Supabase PostgREST client
+
+### Edge / industrial target
+
+- ESP32
+- MPU6050
+- MLX90614
+- ACS712
+- ESP32-CAM
+- MQTT
+
+---
+
+## 📁 Repository structure
 
 ```text
 belt-sentinel-sih2026/
 │
 ├── backend/
-│   ├── server.py
-│   ├── supabase_client.py
-│   ├── synthetic_seed.py
+│   ├── server.py                 # API + scenarios + alerts + recommendations
+│   ├── synthetic_seed.py         # historical telemetry generator
+│   ├── supabase_client.py        # async Supabase/PostgREST access
 │   ├── requirements.txt
 │   └── tests/
 │
@@ -313,7 +293,6 @@ belt-sentinel-sih2026/
 │   │   ├── hooks/
 │   │   ├── lib/
 │   │   └── pages/
-│   │
 │   ├── package.json
 │   └── ...
 │
@@ -323,109 +302,22 @@ belt-sentinel-sih2026/
 └── README.md
 ```
 
-### Important files
+A few files worth opening first:
 
-| File                                 | Purpose                                                          |
-| ------------------------------------ | ---------------------------------------------------------------- |
-| `backend/server.py`                  | FastAPI API, scenarios, telemetry, alerts and AI recommendations |
-| `backend/synthetic_seed.py`          | Generates realistic historical telemetry                         |
-| `backend/supabase_client.py`         | Supabase/PostgREST data access layer                             |
-| `frontend/src/App.js`                | Application routing and authentication                           |
-| `frontend/src/pages/Dashboard.jsx`   | Main monitoring dashboard                                        |
-| `frontend/src/lib/api.js`            | Frontend API communication and LLM streaming                     |
-| `frontend/src/auth/AuthProvider.jsx` | Authentication/session management                                |
-
----
-
-## 🧪 Prototype Scenarios
-
-The current prototype provides five operational scenarios:
-
-```text
-1. Normal Operation
-2. Loose Joint
-3. Damaged Joint
-4. Belt Misalignment
-5. Motor Overload / Belt Slipping
-```
-
-These allow the complete detection → diagnosis → alert → recommendation workflow to be demonstrated without physically creating dangerous equipment failures.
+| File | Why it matters |
+|---|---|
+| `backend/server.py` | Scenario logic, API endpoints, alerts and recommendation flow |
+| `backend/synthetic_seed.py` | How the historical dataset is generated |
+| `backend/supabase_client.py` | Database access through PostgREST |
+| `frontend/src/pages/Dashboard.jsx` | Main monitoring screen |
+| `frontend/src/lib/api.js` | Frontend ↔ backend communication |
+| `frontend/src/auth/AuthProvider.jsx` | Login/session handling |
 
 ---
 
-## 📚 Synthetic Historical Dataset
+## 🚀 Run locally
 
-The prototype includes a synthetic historical-data generator designed to emulate realistic conveyor behavior.
-
-It generates:
-
-* **15,000 records**
-* **75 days**
-* **4 joints**
-* Multiple failure episodes
-* Correlated vibration, temperature, current, health and anomaly signals
-
-The historical timeline models transitions such as:
-
-```text
-Stable
-  ↓
-Early Warning
-  ↓
-Degradation
-  ↓
-Critical Event
-  ↓
-Inspection / Recovery
-```
-
-This allows the dashboard's historical and predictive-maintenance features to be demonstrated consistently.
-
----
-
-## 🛠️ Technology Stack
-
-### Frontend
-
-* React 19
-* React Router
-* Tailwind CSS
-* Recharts
-* Axios
-* Supabase Auth
-* Radix UI
-* Lucide React
-* Framer Motion
-
-### Backend
-
-* Python
-* FastAPI
-* Uvicorn
-* Pydantic
-* Async HTTP / PostgREST
-* MongoDB support
-
-### Data & AI
-
-* Supabase
-* Synthetic telemetry generator
-* Claude-based maintenance recommendation layer
-
-### Industrial / Edge
-
-* ESP32
-* MPU6050
-* MLX90614
-* ACS712
-* ESP32-CAM
-* MQTT
-
----
-
-## 🚀 Running the Project
-
-### 1. Clone the repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/Adityaop07890/belt-sentinel-sih2026.git
@@ -448,141 +340,133 @@ yarn install
 yarn start
 ```
 
+The frontend is configured with Yarn and uses `craco start` under the hood.
+
 ---
 
-## 🔐 Environment Variables
+## 🔐 Environment variables
 
-The project expects environment configuration for services such as:
+Create the required environment file(s) locally and keep secrets out of Git history.
 
 ```env
 MONGO_URL=
 DB_NAME=
-
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
-
 EMERGENT_LLM_KEY=
-
 CORS_ORIGINS=
 SEED_ADMIN_TOKEN=
 ```
 
-**Never commit real API keys, passwords, service-role keys or secrets to GitHub.**
+Never commit passwords, private API keys, service-role keys or other credentials.
 
 ---
 
-## 🔌 API Overview
+## 🔌 API surface
 
-### Monitoring
+Typical monitoring endpoints include:
 
 ```http
 GET /api/dashboard/snapshot
 GET /api/dashboard/timeseries
 GET /api/scenarios
-```
-
-### Historical Data
-
-```http
 GET /api/history/joint
 GET /api/history/all-joints
 GET /api/joint/passport
 GET /api/sensors
-```
-
-### AI Recommendation
-
-```http
 POST /api/ai/recommendation
-```
-
-### Data Seeding
-
-```http
 POST /api/admin/seed
 ```
 
+Treat these as the project-facing API surface; endpoint details can evolve with the prototype.
+
 ---
 
-## 🧭 Current Prototype vs. Deployment
+## 🔄 Prototype today → deployment tomorrow
 
-The current GitHub version uses **scenario-driven synthetic telemetry** for the live demonstration while also supporting persistent historical data through Supabase.
+One of the important design choices is keeping the **data source** separate from the dashboard workflow.
 
-The intended production architecture replaces the simulator's telemetry source with real edge-device data:
+### Today: hackathon prototype
 
 ```text
-Current Prototype
-
-Scenario Simulator
+Scenario generator
        ↓
 FastAPI
        ↓
-Dashboard
+Supabase / application state
+       ↓
+React dashboard
 ```
 
-### Target Deployment
+### Production direction
 
 ```text
-Real Sensors
-     ↓
-ESP32 Edge Gateway
-     ↓
-MQTT
-     ↓
-Backend / ML Pipeline
-     ↓
-Multimodal Fusion
-     ↓
-Database + Dashboard
-     ↓
-Operator Alerts
+Real sensors
+    ↓
+ESP32 edge node
+    ↓
+MQTT / telemetry transport
+    ↓
+Validated ML + multimodal pipeline
+    ↓
+Database + alerting
+    ↓
+Operator dashboard
 ```
 
-This separation allows the UI and backend interfaces to be validated before hardware deployment.
+That lets the team prove the application workflow first, then replace the simulator with live hardware data.
 
 ---
 
-## 🔮 Future Enhancements
+## 🧭 What is implemented vs. future work?
 
-Planned production enhancements include:
+### In the current prototype
 
-* Real-time ESP32 telemetry ingestion
-* Trained anomaly-detection models
-* Computer-vision crack/tear detection
-* Automatic failure localization
-* Remaining Useful Life (RUL) prediction
-* SMS / WhatsApp / Email alerts
-* Edge-side inference
-* Role-based access control
-* Automated incident acknowledgement
-* Maintenance work-order integration
-* Sensor calibration and health monitoring
+- scenario-driven telemetry
+- joint-level health state
+- anomaly and confidence values
+- historical synthetic data
+- Supabase data access
+- authentication in the dashboard
+- alert presentation
+- prototype vision evidence
+- AI-assisted maintenance recommendations
+
+### Natural next steps
+
+- real ESP32 telemetry ingestion
+- field-calibrated sensor baselines
+- trained anomaly-detection models
+- production-grade computer vision
+- remaining useful life (RUL) estimation
+- SMS / WhatsApp / email notifications
+- edge inference
+- role-based access control
+- maintenance work-order integration
+
+The distinction matters: these future items should not be confused with features already validated on a real conveyor.
 
 ---
 
-## 🏆 SIH Value Proposition
+## 🏆 Why the prototype is useful for SIH
 
-Belt-Sentinel focuses on five key outcomes:
+Belt-Sentinel is not trying to be only another sensor dashboard. The demo is structured around the decision a maintenance team actually needs to make:
 
-```text
-EARLY DETECTION
-      +
-MULTI-SENSOR VALIDATION
-      +
-JOINT-LEVEL LOCALIZATION
-      +
-PREDICTIVE MAINTENANCE
-      +
-ACTIONABLE OPERATIONS
-```
+> **What changed? Where did it happen? How serious is it? How confident are we? What should we do next?**
 
-Instead of only displaying raw telemetry, the system converts industrial sensor data into an operator decision:
+That is the product idea in one line:
 
-> **What is happening?
-> Where is it happening?
-> How serious is it?
-> How confident are we?
-> What should we do next?**
+**sensor signals → diagnosis → evidence → maintenance decision**
+
+---
+
+## 📌 Project status
+
+**Stage:** Hackathon prototype  
+**Event:** Smart India Hackathon 2026  
+**Problem Statement:** PS 26008  
+**Data:** Synthetic + application-managed prototype data  
+**Target domain:** Industrial conveyor belt monitoring
 
 ---
 
@@ -590,16 +474,16 @@ Instead of only displaying raw telemetry, the system converts industrial sensor 
 
 **Belt-Sentinel — SIH 2026**
 
-Built as a prototype for **Smart India Hackathon 2026**.
+Built for the Smart India Hackathon 2026 prototype track.
 
 ---
 
 ## 📄 License
 
-Add your preferred project license here, such as MIT, Apache-2.0, or an institution/team-specific license.
+Add your team's chosen license here (for example, MIT or Apache-2.0) before public release.
 
 ---
 
-### Belt-Sentinel
-
-**From sensor signals to maintenance decisions.**
+<p align="center">
+  <sub>Built around a simple idea: catch the change before the failure.</sub>
+</p>
