@@ -324,6 +324,36 @@ git clone https://github.com/Adityaop07890/belt-sentinel-sih2026.git
 cd belt-sentinel-sih2026
 ```
 
+### Docker (cross-platform offline runtime)
+
+Docker Desktop runs the complete stack on Windows, macOS and Linux. Build the images once while connected to the internet, then the stack runs without internet access:
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+Open `http://localhost:3002`. With no Supabase variables configured, the app uses a local demo operator session; any non-empty email and password will sign in. Synthetic telemetry and scenario recommendations work locally. Supabase history/authentication and external LLM recommendations remain optional and are used only when their environment variables are supplied.
+
+To stop the stack:
+
+```bash
+docker compose down
+```
+
+The build downloads base images and dependencies only once. To move the already-built stack to an air-gapped machine, export and transfer the images with `docker save`, then load them with `docker load` before running `docker compose up -d --no-build`.
+
+### Always-online hosted link
+
+For a link that works while your computer is off, deploy the included `render.yaml` from the GitHub repository:
+
+1. In Render, choose **New +** → **Blueprint** and select this repository.
+2. Apply the blueprint. It creates `belt-sentinel-api` and `belt-sentinel-dashboard`.
+3. In the API service, add `SUPABASE_URL` and `SUPABASE_ANON_KEY` if Supabase history/authentication is required.
+4. Share the dashboard URL: `https://belt-sentinel-dashboard.onrender.com/login`.
+
+The blueprint uses the Starter plan so the services stay available when your computer is off. The free plan may sleep and is unsuitable for an always-on demonstration.
+
 ### 2. Backend
 
 ```bash

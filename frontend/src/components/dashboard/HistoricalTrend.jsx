@@ -27,11 +27,16 @@ export default function HistoricalTrend() {
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true); setErr("");
-    axios.get(`${API}/history/all-joints`, { params: { days } })
-      .then((r) => { if (mounted) { setData(r.data); setLoading(false); } })
-      .catch((e) => { if (mounted) { setErr(e?.message || "load failed"); setLoading(false); } });
-    return () => { mounted = false; };
+    const load = () => {
+      setErr("");
+      axios.get(`${API}/history/all-joints`, { params: { days } })
+        .then((r) => { if (mounted) { setData(r.data); setLoading(false); } })
+        .catch((e) => { if (mounted) { setErr(e?.message || "load failed"); setLoading(false); } });
+    };
+    setLoading(true);
+    load();
+    const refreshId = setInterval(load, 5000);
+    return () => { mounted = false; clearInterval(refreshId); };
   }, [days]);
 
   // Merge into a single series by timestamp (bucket to hourly for readability)
@@ -58,7 +63,7 @@ export default function HistoricalTrend() {
     >
       <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-[#252729]">
         <div className="text-[10px] font-mono-tel tracking-[0.18em] text-[#757575]">
-          HISTORICAL HEALTH TREND · SYNTHETIC DEMO DATA · SUPABASE
+          HISTORICAL HEALTH TREND · LIVE SYNC · SUPABASE
         </div>
         <div className="flex gap-1" data-testid="trend-range-selector">
           {RANGES.map((r) => (

@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      CORS_ORIGINS: http://localhost:3002,http://127.0.0.1:3002
+    expose:
+      - "8001"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_BACKEND_URL: ""
+    depends_on:
+      - backend
+    environment:
+      BACKEND_URL: http://backend:8001
+    ports:
+      - "3002:80"
+    restart: unless-stopped

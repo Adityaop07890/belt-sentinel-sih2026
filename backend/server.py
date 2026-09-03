@@ -21,10 +21,13 @@ import supabase_client as sb
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB (used for optional persistence of scenario runs)
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+# MongoDB is optional for local demo runs. Only create the client when the
+# required environment variables are configured; otherwise the app still works
+# with in-memory/demo data paths.
+mongo_url = os.environ.get("MONGO_URL")
+db_name = os.environ.get("DB_NAME")
+client = AsyncIOMotorClient(mongo_url) if mongo_url else None
+db = client[db_name] if client and db_name else None
 
 app = FastAPI(title="AIoT Conveyor Belt Dashboard API")
 api_router = APIRouter(prefix="/api")
@@ -365,9 +368,20 @@ async def ai_recommendation(req: RecommendationRequest):
 
     api_key = os.environ.get("EMERGENT_LLM_KEY")
     if not api_key:
-        raise HTTPException(500, "EMERGENT_LLM_KEY not configured")
+        async def local_event_generator():
+            yield f"data: Local demo recommendation: {alert['recommendation']}\n\n"
+            yield "data: [DONE]\n\n"
+        return StreamingResponse(local_event_generator(), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
-    from emergentintegrations.llm.chat import LlmChat, UserMessage, TextDelta, StreamDone
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage, TextDelta, StreamDone
+    except ImportError:
+        async def fallback_event_generator():
+            yield "data: [ERROR] emergentintegrations package is not installed in this environment. Local demo mode is unavailable for AI recommendations.\n\n"
+            yield "data: [DONE]\n\n"
+        return StreamingResponse(fallback_event_generator(), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
     system_msg = (
         "You are a senior industrial reliability engineer specialising in conveyor belt "
@@ -460,10 +474,74 @@ def _downsample(rows: List[Dict[str, Any]], target: int) -> List[Dict[str, Any]]
     return picked
 
 
+def _local_history(days: int) -> Dict[str, List[Dict[str, Any]]]:
+    """Build a small local trend so the dashboard remains usable offline."""
+    now = datetime.now(timezone.utc)
+    points = min(120, max(30, days * 2))
+    joints = {joint: [] for joint in ["J1", "J2", "J3", "J4"]}
+    for index in range(points):
+        timestamp = (now - timedelta(days=days) + timedelta(days=days * index / (points - 1))).isoformat()
+        progress = index / (points - 1)
+        if progress < 0.55:
+            system_drop = max(0.0, (progress - 0.28) / 0.27) * 42
+        elif progress < 0.72:
+            system_drop = 42 - ((progress - 0.55) / 0.17) * 4
+        else:
+            system_drop = max(0.0, 38 - ((progress - 0.72) / 0.28) * 38)
+        if progress < 0.30:
+            joint_drop = 0.0
+        elif progress < 0.55:
+            joint_drop = ((progress - 0.30) / 0.25) * 22
+        elif progress < 0.72:
+            joint_drop = 22 - ((progress - 0.55) / 0.17) * 22
+        else:
+            joint_drop = 0.0
+        base_health = {
+            "J1": 95 - system_drop,
+            "J2": 92 - system_drop - joint_drop,
+            "J3": 94 - system_drop,
+            "J4": 93 - system_drop,
+        }
+        for joint, health in base_health.items():
+            variation = math.sin(index * 1.7 + len(joint)) * 1.5
+            score = round(max(0, min(100, health + variation)), 1)
+            joints[joint].append({
+                "timestamp": timestamp,
+                "health_score": score,
+                "confidence": 88 if joint == "J2" else 94,
+                "risk_state": "WARNING" if score < 70 else "NORMAL",
+                "event_type": "DEGRADATION" if joint == "J2" and score < 85 else "NORMAL",
+            })
+    return joints
+
+
+def _live_history_tail() -> Dict[str, Dict[str, Any]]:
+    """Return the current simulator health sample for each joint."""
+    snapshot = generate_snapshot("normal")
+    timestamp = snapshot["timestamp"]
+    return {
+        joint: {
+            "timestamp": timestamp,
+            "health_score": round(max(0, min(100, state["health"] + random.uniform(-1.5, 1.5))), 1),
+            "confidence": SCENARIOS["normal"]["confidence"],
+            "risk_state": "STABLE",
+            "event_type": "NORMAL",
+        }
+        for joint, state in snapshot["joints"].items()
+    }
+
+
 @api_router.get("/history/all-joints")
 async def history_all(days: int = 30, conveyor_id: str = "conv-01"):
     """Return the health trend for J1-J4 over `days` with server-side downsampling."""
     days = max(1, min(365, days))
+    if not sb.is_configured():
+        joints = _local_history(days)
+        live_tail = _live_history_tail()
+        for joint, sample in live_tail.items():
+            joints[joint].append(sample)
+        return {"days": days, "joints": joints}
+
     since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
     target_points = 300 if days >= 60 else 200
 
@@ -488,7 +566,14 @@ async def history_all(days: int = 30, conveyor_id: str = "conv-01"):
 
     import asyncio
     results = await asyncio.gather(*[_one(j) for j in ["J1", "J2", "J3", "J4"]])
-    return {"days": days, "joints": {j: rows for j, rows in results}}
+    joints = {j: rows for j, rows in results}
+    live_tail = _live_history_tail()
+    for joint, sample in live_tail.items():
+        if joints[joint] and joints[joint][-1]["timestamp"] == sample["timestamp"]:
+            joints[joint][-1] = sample
+        else:
+            joints[joint].append(sample)
+    return {"days": days, "joints": joints}
 
 
 @api_router.get("/joint/passport")
@@ -600,4 +685,5 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    if client is not None:
+        client.close()

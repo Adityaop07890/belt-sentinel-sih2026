@@ -8,7 +8,7 @@ import VisionPanel from "@/components/dashboard/VisionPanel";
 import TelemetryCharts from "@/components/dashboard/TelemetryCharts";
 import AlertPanel from "@/components/dashboard/AlertPanel";
 import HistoricalTrend from "@/components/dashboard/HistoricalTrend";
-import { HardHat, LogOut, User } from "lucide-react";
+import { HardHat, LogOut } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate } from "react-router-dom";
 

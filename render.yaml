@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: belt-sentinel-api
+    runtime: docker
+    rootDir: backend
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: EMERGENT_LLM_KEY
+        sync: false
+
+  - type: web
+    name: belt-sentinel-dashboard
+    runtime: docker
+    rootDir: frontend
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: BACKEND_URL
+        value: https://belt-sentinel-api.onrender.com
