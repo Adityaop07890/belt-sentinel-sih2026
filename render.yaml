@@ -3,7 +3,7 @@ services:
     name: belt-sentinel-api
     runtime: docker
     rootDir: backend
-    plan: starter
+    plan: free
     dockerfilePath: ./Dockerfile
     envVars:
       - key: CORS_ORIGINS
@@ -19,7 +19,7 @@ services:
     name: belt-sentinel-dashboard
     runtime: docker
     rootDir: frontend
-    plan: starter
+    plan: free
     dockerfilePath: ./Dockerfile
     envVars:
       - key: BACKEND_URL

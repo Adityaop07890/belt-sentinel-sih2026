@@ -352,7 +352,7 @@ For a link that works while your computer is off, deploy the included `render.ya
 3. In the API service, add `SUPABASE_URL` and `SUPABASE_ANON_KEY` if Supabase history/authentication is required.
 4. Share the dashboard URL: `https://belt-sentinel-dashboard.onrender.com/login`.
 
-The blueprint uses the Starter plan so the services stay available when your computer is off. The free plan may sleep and is unsuitable for an always-on demonstration.
+The blueprint uses Render's free plan, so it can run for a short demonstration while your computer is off. Free services may sleep after inactivity and wake when the professor opens the link; the first request after sleeping can take up to a minute.
 
 ### 2. Backend
 
