@@ -358,11 +358,12 @@ The blueprint uses Render's free plan, so it can run for a short demonstration w
 
 ## 👤 Guest / Judge Login
 
-For the SIH evaluator or demo operator, use the following **guest user ID**:
+For the SIH evaluator or demo operator, use the following credentials:
 
-**Guest User ID:** `sih.judge@yourdomain.com`
+**Guest User ID:** `sih.judge@yourdomain.com`  
+**Guest Password:** `Sih@judge26`
 
-> The password is intentionally not stored in this public repository. Share the guest password separately with the evaluator.
+> This account is intended for SIH demonstration/evaluation access.
 
 ---
 
