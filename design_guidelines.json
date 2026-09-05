@@ -16,36 +16,15 @@
     }
   },
   "colors": {
-    "background": {
-      "base": "#121416",
-      "panel": "#1A1C1E",
-      "card": "#252729"
-    },
-    "text": {
-      "primary": "#E2E2E2",
-      "secondary": "#A0A0A0",
-      "muted": "#757575"
-    },
-    "status": {
-      "normal": "#3A3E41",
-      "run_indicator": "#5A6063",
-      "warning": "#FFBF00",
-      "critical": "#FF3333",
-      "info": "#4A90E2"
-    },
-    "borders": {
-      "default": "#3A3E41",
-      "active": "#5A6063"
-    },
+    "background": {"base": "#121416", "panel": "#1A1C1E", "card": "#252729"},
+    "text": {"primary": "#E2E2E2", "secondary": "#A0A0A0", "muted": "#757575"},
+    "status": {"normal": "#3A3E41", "run_indicator": "#5A6063", "warning": "#FFBF00", "critical": "#FF3333", "info": "#4A90E2"},
+    "borders": {"default": "#3A3E41", "active": "#5A6063"},
     "notes": "ISA-101 compliant: monochrome grayscale baseline. DO NOT USE vibrant colors for normal states. Reserve amber and red ONLY for alarms and anomalies."
   },
   "visual_enhancers": {
-    "textures": [
-      "Subtle grain texture or scanline overlay over the vision panel (ESP32-CAM) to simulate industrial CRT feeds."
-    ],
-    "shadows": [
-      "No large diffuse shadows. Use sharp 1px borders and very subtle drop-shadows (e.g., shadow-[0_4px_12px_rgba(0,0,0,0.5)]) for popovers/modals only."
-    ],
+    "textures": ["Subtle grain texture or scanline overlay over the vision panel (ESP32-CAM) to simulate industrial CRT feeds."],
+    "shadows": ["No large diffuse shadows. Use sharp 1px borders and very subtle drop-shadows (e.g., shadow-[0_4px_12px_rgba(0,0,0,0.5)]) for popovers/modals only."],
     "glassmorphism": false,
     "neumorphism": false,
     "borders": "Sharp edges or max 2px-4px radius. Industrial, structural, precise."
@@ -56,50 +35,23 @@
     "main_content": "Executive Summary Banner at the top. 4 interactive Splice Joint cards in a 2x2 or 1x4 grid. Deep Diagnostic Telemetry below."
   },
   "components": {
-    "executive_banner": {
-      "description": "Top marquee/banner. Shows belt speed, motor load, and active critical alerts marquee.",
-      "style": "Dark gray background with red text for active critical alerts, gray text for normal telemetry."
-    },
-    "global_health_score": {
-      "description": "Gauge (0-100) with 30-day trendline. Should look like industrial SCADA.",
-      "style": "Grayscale arc, only colored if in warning/critical state."
-    },
-    "splice_joint_cards": {
-      "description": "4 cards (J1-J4). Contains health %, lifecycle, anomaly detected, and thumbnail.",
-      "style": "Flat, rectangular, 1px border. Changes border to red/amber if anomaly detected."
-    },
-    "telemetry_charts": {
-      "description": "Tabbed time-series charts (Vibration, Thermal, Current, Isolation Forest).",
-      "style": "Shadcn charts/Recharts. Lines must be grayscale. ISO 10816-3 severity bands (green/gray/yellow/red) subtly overlaid behind the line."
-    },
-    "vision_panel": {
-      "description": "ESP32-CAM feed with CNN bounding boxes.",
-      "style": "Image with absolute positioned div for bounding box (red border). CRT scanline effect over the image."
-    },
-    "explainable_ai_cards": {
-      "description": "Expandable cards on alerts. Shows vibration + thermal + vision evidence, plus LLM maintenance recommendations.",
-      "style": "Accordions or expandable cards. Industrial look."
-    }
+    "executive_banner": {"description": "Top marquee/banner. Shows belt speed, motor load, and active critical alerts marquee.", "style": "Dark gray background with red text for active critical alerts, gray text for normal telemetry."},
+    "global_health_score": {"description": "Gauge (0-100) with 30-day trendline. Should look like industrial SCADA.", "style": "Grayscale arc, only colored if in warning/critical state."},
+    "splice_joint_cards": {"description": "4 cards (J1-J4). Contains health %, lifecycle, anomaly detected, and thumbnail.", "style": "Flat, rectangular, 1px border. Changes border to red/amber if anomaly detected."},
+    "telemetry_charts": {"description": "Tabbed time-series charts (Vibration, Thermal, Current, Isolation Forest).", "style": "Shadcn charts/Recharts. Lines must be grayscale. ISO 10816-3 severity bands (green/gray/yellow/red) subtly overlaid behind the line."},
+    "vision_panel": {"description": "ESP32-CAM feed with CNN bounding boxes.", "style": "Image with absolute positioned div for bounding box (red border). CRT scanline effect over the image."},
+    "explainable_ai_cards": {"description": "Expandable cards on alerts. Shows vibration + thermal + vision evidence, plus LLM maintenance recommendations.", "style": "Accordions or expandable cards. Industrial look."}
   },
   "motion": {
     "hover_states": "Slight brightness increase. hover:bg-[#3A3E41]. Text color changes to white.",
     "entrance_animations": "Staggered fade-in for cards. opacity-0 translate-y-4 to opacity-100 translate-y-0.",
     "telemetry_animations": "Simulated live data moving from right to left on charts."
   },
-  "accessibility": {
-    "contrast": "APCA contrast compliant. Light gray text on charcoal background.",
-    "testing": "All interactive elements MUST include a data-testid attribute (e.g., data-testid='scenario-loose-joint')."
-  },
+  "accessibility": {"contrast": "APCA contrast compliant. Light gray text on charcoal background.", "testing": "All interactive elements MUST include a data-testid attribute (e.g., data-testid='scenario-loose-joint')."},
   "media": {
     "image_urls": {
-      "clean_splice": {
-        "url": "https://images.unsplash.com/photo-1535923430552-0ce3cd477cc7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHwzfHxpbmR1c3RyaWFsJTIwY29udmV5b3IlMjBiZWx0JTIwbWFjaGluZXJ5fGVufDB8fHx8MTc4ODAyMjAwMnww&ixlib=rb-4.1.0&q=85",
-        "description": "Normal conveyor belt splice thumbnail."
-      },
-      "damaged_splice": {
-        "url": "https://images.unsplash.com/photo-1721413059017-2c4232b10ded?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwxfHxkYW1hZ2VkJTIwcnViYmVyJTIwdGV4dHVyZXxlbnwwfHx8fDE3ODgwMjIwMDZ8MA&ixlib=rb-4.1.0&q=85",
-        "description": "Torn/Damaged conveyor belt splice thumbnail with visible tear."
-      }
+      "clean_splice": {"url": "https://images.unsplash.com/photo-1535923430552-0ce3cd477cc7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHwzfHxpbmR1c3RyaWFsJTIwY29udmV5b3IlMjBiZWx0JTIwbWFjaGluZXJ5fGVufDB8fHx8MTc4ODAyMjAwMnww&ixlib=rb-4.1.0&q=85", "description": "Normal conveyor belt splice thumbnail."},
+      "damaged_splice": {"url": "https://images.unsplash.com/photo-1721413059017-2c4232b10ded?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwxfHxkYW1hZ2VkJTIwcnViYmVyJTIwdGV4dHVyZXxlbnwwfHx8fDE3ODgwMjIwMDZ8MA&ixlib=rb-4.1.0&q=85", "description": "Torn/Damaged conveyor belt splice thumbnail with visible tear."}
     }
   },
   "instructions_to_main_agent": [
