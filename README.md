@@ -518,14 +518,6 @@ That is the product idea in one line:
 
 Built for the Smart India Hackathon 2026 prototype track.
 
----
-
-## 📄 License
-
-Add your team's chosen license here (for example, MIT or Apache-2.0) before public release.
-
----
-
 <p align="center">
   <sub>Built around a simple idea: catch the change before the failure.</sub>
 </p>
