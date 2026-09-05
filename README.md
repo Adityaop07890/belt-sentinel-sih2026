@@ -343,16 +343,7 @@ docker compose down
 
 The build downloads base images and dependencies only once. To move the already-built stack to an air-gapped machine, export and transfer the images with `docker save`, then load them with `docker load` before running `docker compose up -d --no-build`.
 
-### Always-online hosted link
 
-For a link that works while your computer is off, deploy the included `render.yaml` from the GitHub repository:
-
-1. In Render, choose **New +** → **Blueprint** and select this repository.
-2. Apply the blueprint. It creates `belt-sentinel-api` and `belt-sentinel-dashboard`.
-3. In the API service, add `SUPABASE_URL` and `SUPABASE_ANON_KEY` if Supabase history/authentication is required.
-4. Share the dashboard URL: `https://belt-sentinel-dashboard.onrender.com/login`.
-
-The blueprint uses Render's free plan, so it can run for a short demonstration while your computer is off. Free services may sleep after inactivity and wake when the professor opens the link; the first request after sleeping can take up to a minute.
 
 ---
 
