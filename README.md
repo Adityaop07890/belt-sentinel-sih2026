@@ -354,6 +354,18 @@ For a link that works while your computer is off, deploy the included `render.ya
 
 The blueprint uses Render's free plan, so it can run for a short demonstration while your computer is off. Free services may sleep after inactivity and wake when the professor opens the link; the first request after sleeping can take up to a minute.
 
+---
+
+## 👤 Guest / Judge Login
+
+For the SIH evaluator or demo operator, use the following **guest user ID**:
+
+**Guest User ID:** `sih.judge@yourdomain.com`
+
+> The password is intentionally not stored in this public repository. Share the guest password separately with the evaluator.
+
+---
+
 ### 2. Backend
 
 ```bash
