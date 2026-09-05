@@ -7,27 +7,24 @@
 //     (or `<feature>-<element>-<qualifier>` when an element repeats). Examples:
 //     'login-submit-button', 'cart-quantity-input', 'product-card-image'.
 //   - Reference them in JSX as `data-testid={LOGIN.submitButton}`.
-//
-// Why kebab-case values: required by qabot's CSS-attribute selector matcher
-// and the lint rule `emergent(kebab-case-testid)`.
 
 export const LOGIN = {
-	emailInput: 'login-email-input',
-	passwordInput: 'login-password-input',
-	submitButton: 'login-submit-button',
-	forgotPasswordLink: 'login-forgot-password-link',
-	registerLink: 'login-register-link',
+\temailInput: 'login-email-input',
+\tpasswordInput: 'login-password-input',
+\tsubmitButton: 'login-submit-button',
+\tforgotPasswordLink: 'login-forgot-password-link',
+\tregisterLink: 'login-register-link',
 };
 
 export const REGISTER = {
-	nameInput: 'register-name-input',
-	emailInput: 'register-email-input',
-	passwordInput: 'register-password-input',
-	passwordConfirmInput: 'register-password-confirm-input',
-	submitButton: 'register-submit-button',
-	loginLink: 'register-login-link',
+\tnameInput: 'register-name-input',
+\temailInput: 'register-email-input',
+\tpasswordInput: 'register-password-input',
+\tpasswordConfirmInput: 'register-password-confirm-input',
+\tsubmitButton: 'register-submit-button',
+\tloginLink: 'register-login-link',
 };
 
 export const LOGOUT = {
-	button: 'logout-button',
+\tbutton: 'logout-button',
 };
